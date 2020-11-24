@@ -21,6 +21,53 @@ void step(struct CPU *cpu){
 		case 0x4: SNE_kk(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter++;  break;
 		case 0x5: SE(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
 		case 0x6: LD(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter++; break;
+		case 0x7: SUM_kk(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter++; break;
+		case 0x8:
+			switch(im.byNibble.d) {
+				case 0x0: LD(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;	
+				case 0x1: OR(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
+				case 0x2: AND(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
+				case 0x3: XOR(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
+				case 0x4: SUM(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
+				case 0x5: SUB(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
+				case 0x6: SHR(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
+				case 0x7: SUBN(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
+				case 0xE: SHL(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
+			} break;
+		case 0x9: SNE(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
+		case 0xA: LD_nnn(cpu, im.nnn); cpu->programCounter++; break;
+		case 0xB: JP_v0(cpu, im.nnn); break;
+		case 0xC: RND(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter++; break;
+		case 0xD: printf("\x1B[31mERROR: \x1B[0minstruction %s is no implemented yet \n", "DRW"); cpu->programCounter++; break;
+		case 0xE:
+			switch(im.byByte.b) {
+				case 0x9E:
+					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "SKP"); break;
+				case 0xA1:
+					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "SKNP"); break;
+			} cpu->programCounter++; break;
+		case 0xF:
+			switch(im.byByte.b){
+				case 0x07:
+					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_DT"); break;
+				case 0x0A:
+					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_KEY"); break;
+				case 0x15:
+					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_SET_DT"); break;
+				case 0x18:
+					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_SET_ST"); break;
+				case 0x1E: ADD_I(cpu, im.byByte.b); break;
+				case 0x29:
+					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_FIND_DIGIT"); break;
+				case 0x33:
+					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_BCD"); break;
+				case 0x55:
+					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_STORE_REGISTERS"); break;
+				case 0x65:
+					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_READ_REGISTERS"); break;
+			} cpu->programCounter++; break;
+
+
 		default: 
 			printf("\x1B[31mERROR: \x1B[0minstruction: 0x%.4hx not found \n", im.all); 
 			fflush(stdout); 
@@ -114,8 +161,8 @@ void JP_v0(struct CPU *cpu, uint16_t nnn){
 	cpu->programCounter = (uint16_t)cpu->registers.V[0] + nnn;
 }
 //Cxkk
-void RND(struct CPU *cpu, uint8_t kk){
-	cpu->registers.V[0] = rand() & kk;
+void RND(struct CPU *cpu, uint8_t a, uint8_t kk){
+	cpu->registers.V[a] = rand() & kk;
 }
 /*
 //Dxyn ========================================= TODO

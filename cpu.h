@@ -89,7 +89,7 @@ void LD_nnn(struct CPU *, uint16_t);
 //Bnnn
 void JP_v0(struct CPU *, uint16_t);
 //Cxkk
-void RND(struct CPU *, uint8_t);
+void RND(struct CPU *, uint8_t, uint8_t);
 //Dxyn
 void DRW(struct CPU *, uint8_t, uint8_t, uint8_t);
 //Ex9E
