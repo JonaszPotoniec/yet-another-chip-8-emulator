@@ -1,79 +1,107 @@
 #include "cpu.h"
+#include "utils.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
 
 void cpu_init(struct CPU *cpu){
 	cpu->stackPointer = 0;
 	cpu->programCounter = 0x200;
+	cpu->stackPointer = -1;
+	memset(cpu->memory.RAM, 0, 0xFFF);
 }
 
 void step(struct CPU *cpu){
 	union instructionMask im;
-	im.all = *(uint16_t *)((uint8_t *)&(cpu->memory) + cpu->programCounter);
+	im.byByte.a = *((uint8_t *)&(cpu->memory) + cpu->programCounter);
+	im.byByte.b = *((uint8_t *)&(cpu->memory) + cpu->programCounter + 1);
+	//im.all = ((instruction << 8) & 0xFF00) | ((instruction >> 8) & 0x00Ff);
 
-	printf("\x1B[34mDEBUG: \x1B[0minstruction: 0x%.4hx \n", im.all);
+	write_log(LOG_LEVEL_DEBUG , "instruction: 0x%.4hx (0x%hx %hx %hx %hx) \n", im.all, im.byNibble.a, im.byNibble.b, im.byNibble.c, im.byNibble.d);
 	switch(im.byNibble.a & 0x000F){
-		case 0x0: SYS(cpu, im.nnn & 0x0FFF); cpu->programCounter++; break;
-		case 0x1: JP(cpu, im.nnn & 0x0FFF); break;
-		case 0x2: CALL(cpu, im.nnn & 0x0FFF); cpu->programCounter++; break;
-		case 0x3: SE_kk(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter++; break;
-		case 0x4: SNE_kk(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter++;  break;
-		case 0x5: SE(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
-		case 0x6: LD(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter++; break;
-		case 0x7: SUM_kk(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter++; break;
+		case 0x0: 
+			switch(im.byByte.b) {
+				case 0x0:
+					SYS(cpu, im.nnn); cpu->programCounter+=2; break;
+				case 0xE0:
+					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "CLS"); break;
+				case 0xEE:
+					RET(cpu); cpu->programCounter+=0; break;	
+			} break;
+		case 0x1: JP(cpu, im.nnn); break;
+		case 0x2: CALL(cpu, im.nnn); cpu->programCounter+=2; break;
+		case 0x3: SE_kk(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter+=2; break;
+		case 0x4: SNE_kk(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter+=2;  break;
+		case 0x5: SE(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
+		case 0x6: LD(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter+=2; break;
+		case 0x7: SUM_kk(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter+=2; break;
 		case 0x8:
 			switch(im.byNibble.d) {
-				case 0x0: LD(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;	
-				case 0x1: OR(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
-				case 0x2: AND(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
-				case 0x3: XOR(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
-				case 0x4: SUM(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
-				case 0x5: SUB(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
-				case 0x6: SHR(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
-				case 0x7: SUBN(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
-				case 0xE: SHL(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
+				case 0x0: LD(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;	
+				case 0x1: OR(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
+				case 0x2: AND(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
+				case 0x3: XOR(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
+				case 0x4: SUM(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
+				case 0x5: SUB(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
+				case 0x6: SHR(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
+				case 0x7: SUBN(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
+				case 0xE: SHL(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
+				default: 
+					write_log(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
+					fflush(stdout); 
+					assert(0 && "command not found");
 			} break;
-		case 0x9: SNE(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter++; break;
-		case 0xA: LD_nnn(cpu, im.nnn); cpu->programCounter++; break;
+		case 0x9: SNE(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
+		case 0xA: LD_nnn(cpu, im.nnn); cpu->programCounter+=2; break;
 		case 0xB: JP_v0(cpu, im.nnn); break;
-		case 0xC: RND(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter++; break;
-		case 0xD: printf("\x1B[31mERROR: \x1B[0minstruction %s is no implemented yet \n", "DRW"); cpu->programCounter++; break;
+		case 0xC: RND(cpu, im.byNibble.b, im.byByte.b); cpu->programCounter+=2; break;
+		case 0xD: write_log(LOG_LEVEL_ERROR, "instruction %s is no implemented yet \n", "DRW"); cpu->programCounter+=2; break;
 		case 0xE:
 			switch(im.byByte.b) {
 				case 0x9E:
-					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "SKP"); break;
+					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "SKP"); break;
 				case 0xA1:
-					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "SKNP"); break;
-			} cpu->programCounter++; break;
+					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "SKNP"); break;
+				default: 
+					write_log(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
+					fflush(stdout); 
+					assert(0 && "command not found");
+			} cpu->programCounter+=2; break;
 		case 0xF:
 			switch(im.byByte.b){
 				case 0x07:
-					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_DT"); break;
+					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_DT"); break;
 				case 0x0A:
-					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_KEY"); break;
+					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_KEY"); break;
 				case 0x15:
-					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_SET_DT"); break;
+					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_SET_DT"); break;
 				case 0x18:
-					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_SET_ST"); break;
+					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_SET_ST"); break;
 				case 0x1E: ADD_I(cpu, im.byByte.b); break;
 				case 0x29:
-					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_FIND_DIGIT"); break;
+					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_FIND_DIGIT"); break;
 				case 0x33:
-					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_BCD"); break;
+					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_BCD"); break;
 				case 0x55:
-					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_STORE_REGISTERS"); break;
+					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_STORE_REGISTERS"); break;
 				case 0x65:
-					printf("\x1B[31mERROR: \x1B[0minstruction %s is not implemented yet \n", "LD_READ_REGISTERS"); break;
-			} cpu->programCounter++; break;
+					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_READ_REGISTERS"); break;
+				default: 
+					write_log(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
+					fflush(stdout); 
+					//assert(0 && "command not found");
+			} cpu->programCounter+=2; break;
 
 
 		default: 
-			printf("\x1B[31mERROR: \x1B[0minstruction: 0x%.4hx not found \n", im.all); 
+			write_log(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
 			fflush(stdout); 
 			assert(0 && "command not found");
 	}
 
+	usleep(50000);
 	step(cpu);
 }
 
@@ -86,7 +114,7 @@ void SYS(struct CPU *cpu, uint16_t a){return;}
 void CLS(struct CPU *cpu){}
 //00EE
 void RET(struct CPU *cpu){
-	cpu->programCounter = cpu->stack[cpu->programCounter];
+	cpu->programCounter = cpu->stack[cpu->stackPointer];
 	cpu->stackPointer--;
 }
 //1nnn
@@ -99,15 +127,15 @@ void CALL(struct CPU *cpu, uint16_t nnn){
 }
 //3xkk
 void SE_kk(struct CPU *cpu, uint8_t a, uint8_t kk){
-	if(cpu->registers.V[a] == kk) cpu->programCounter++;
+	if(cpu->registers.V[a] == kk) cpu->programCounter+=2;
 }
 //4xy0
 void SNE_kk(struct CPU *cpu, uint8_t a, uint8_t kk){
-	if(cpu->registers.V[a] != kk) cpu->programCounter++;
+	if(cpu->registers.V[a] != kk) cpu->programCounter+=2;
 }
 //5xy0
 void SE(struct CPU *cpu, uint8_t a, uint8_t b){
-	if(cpu->registers.V[a] == cpu->registers.V[b]) cpu->programCounter++;
+	if(cpu->registers.V[a] == cpu->registers.V[b]) cpu->programCounter+=2;
 }
 //6xkk
 void LD_kk(struct CPU *cpu, uint8_t a, uint8_t kk){cpu->registers.V[a] = kk;}
@@ -150,7 +178,7 @@ void SHL(struct CPU *cpu, uint8_t a, uint8_t b){
 }
 //9xy0
 void SNE(struct CPU *cpu, uint8_t a, uint8_t b){
-	if(cpu->registers.V[a] != cpu->registers.V[b]) cpu->programCounter++;
+	if(cpu->registers.V[a] != cpu->registers.V[b]) cpu->programCounter+=2;
 }
 //Annn
 void LD_nnn(struct CPU *cpu, uint16_t nnn){

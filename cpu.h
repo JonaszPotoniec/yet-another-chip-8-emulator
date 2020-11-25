@@ -9,26 +9,26 @@ struct registers {
 };	
 
 struct memory {
-	int8_t RAM[0x200];
-	int8_t PROGRAM[0xFFF - 0x200];
+	uint8_t RAM[0x200];
+	uint8_t PROGRAM[0xFFF - 0x200];
 } __attribute__ ((packed)); 
 
 union instructionMask {
 	struct {
-			int8_t a : 4;
-			int8_t b : 4;
-			int8_t c : 4;
-			int8_t d : 4;
+			uint8_t d : 4;
+			uint8_t c : 4;
+			uint8_t b : 4;
+			uint8_t a : 4;
 	} __attribute__ ((packed)) byNibble;
 	struct {
-			int8_t a;
-			int8_t b;
+			uint8_t b;
+			uint8_t a;
 	} __attribute__ ((packed)) byByte;
 	struct {
-			int8_t a : 4;
-			int16_t nnn : 12;
+			uint16_t nnn : 12;
+			uint8_t a : 4;
 	} __attribute__ ((packed));
-	int16_t all;
+	uint16_t all;
 };
 
 struct CPU {
