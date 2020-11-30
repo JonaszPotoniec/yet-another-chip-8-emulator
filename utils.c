@@ -52,6 +52,20 @@ uint8_t load_rom(uint8_t *memory, uint16_t max_size, char *fileName){
 	return 0;
 }
 
+uint8_t log_init(){
+	#ifdef LOG_TO_FILE
+		logFile = fopen(LOG_TO_FILE, "w");
+		return !logFile;
+	#endif
+		return 0;
+}
+
+void log_end(){
+	#ifdef LOG_TO_FILE
+		fclose(logFile);
+	#endif
+}
+
 void write_log(uint8_t logLevel, const char* format, ...){
 	#ifdef LOG_LEVEL
 			if(logLevel >= LOG_LEVEL) return;
@@ -64,20 +78,52 @@ void write_log(uint8_t logLevel, const char* format, ...){
 
 	switch(logLevel) {
 		case LOG_LEVEL_ERROR:
-			printf("\x1B[31m[ERROR] \x1B[0m");
-			vprintf(format, args);			
+			#ifdef LOG_TO_TERMINAL			
+				printf("\x1B[31m[ERROR] \x1B[0m");
+				vprintf(format, args);
+			#endif
+			#ifdef LOG_TO_FILE
+				if(logFile) {
+					fprintf(logFile, "[ERROR] ");
+					vfprintf(logFile, format, args);
+				}
+			#endif
 			break;
 		case LOG_LEVEL_INFO:
-			printf("\x1B[34m[INFO] \x1B[0m");
-			vprintf(format, args);			
+			#ifdef LOG_TO_TERMINAL			
+				printf("\x1B[34m[INFO] \x1B[0m");
+				vprintf(format, args);			
+			#endif
+			#ifdef LOG_TO_FILE
+				if(logFile) {
+					fprintf(logFile, "[INFO] ");
+					vfprintf(logFile, format, args);
+				}
+			#endif
 			break;
 		case LOG_LEVEL_DEBUG:
-			printf("\x1B[33m[DEBUG] \x1B[0m");
-			vprintf(format, args);			
+			#ifdef LOG_TO_TERMINAL			
+				printf("\x1B[33m[DEBUG] \x1B[0m");
+				vprintf(format, args);			
+			#endif
+			#ifdef LOG_TO_FILE
+				if(logFile) {
+					fprintf(logFile, "[DEBUG] ");
+					vfprintf(logFile, format, args);
+				}
+			#endif
 			break;
 		default:
-			printf("\x1B[36m[UNKNOWN] \x1B[0m");
-			vprintf(format, args);			
+			#ifdef LOG_TO_TERMINAL			
+				printf("\x1B[36m[UNKNOWN] \x1B[0m");
+				vprintf(format, args);			
+			#endif
+			#ifdef LOG_TO_FILE
+				if(logFile) {
+					fprintf(logFile, "[UNKNOWN] ");
+					vfprintf(logFile, format, args);
+				}
+			#endif
 			break;
 	}
 }
