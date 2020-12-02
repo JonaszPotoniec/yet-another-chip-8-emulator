@@ -89,11 +89,11 @@ void step(struct CPU *cpu){
 				case 0x29:
 					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_FIND_DIGIT"); break;
 				case 0x33:
-					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_BCD"); break;
+					LD_BCD(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				case 0x55:
-					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_STORE_REGISTERS"); break;
+					LD_STORE_REGISTERS(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				case 0x65:
-					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_READ_REGISTERS"); break;
+					LD_READ_REGISTERS(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				default: 
 					write_log(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
 					fflush(stdout); 
@@ -222,10 +222,26 @@ void ADD_I(struct CPU *cpu, uint8_t a){
 /*
 //Fx29
 void LD_FIND_DIGIT(struct CPU *, uint8_t);
-//Fx33
-void LD_BCD(struct CPU *, uint8_t);
-//Fx55
-void LD_STORE_REGISTERS(struct CPU *, uint8_t);
-//Fx65
-void LD_READ_REGISTERS(struct CPU *, uint8_t);
 */
+//Fx33
+void LD_BCD(struct CPU *cpu, uint8_t a){
+	uint8_t temp = cpu->registers.V[a];
+	for(int i = 2; i >= 0; i--){
+		cpu->memory.RAM[cpu->registers.I + i] = temp % 10;
+		temp /= 10;
+	}
+}
+
+//Fx55
+void LD_STORE_REGISTERS(struct CPU *cpu, uint8_t a){
+	for(int i = 0; i <= a; i++){
+		cpu->memory.RAM[cpu->registers.I + i] = cpu->registers.V[i];  
+	}
+}
+//Fx65
+void LD_READ_REGISTERS(struct CPU *cpu, uint8_t a){
+	for(int i = 0; i <= a; i++){
+		cpu->registers.V[i] = cpu->memory.RAM[cpu->registers.I + i]; 
+	}
+}
+
