@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 
-uint8_t detect_endiannes(){
+uint8_t detectEndiannes(){
 	union tester {
 		uint8_t nibble : 4;
 		uint8_t value;
@@ -22,21 +22,21 @@ uint16_t getFileSize(FILE *file){
 	return size;
 }
 
-uint8_t load_rom(uint8_t *memory, uint16_t max_size, char *fileName){
+uint8_t loadRom(uint8_t *memory, uint16_t max_size, char *fileName){
 	FILE *file = fopen(fileName, "rb");
 	if(!file){
-		write_log(LOG_LEVEL_ERROR, "Can't load file: %s\n", fileName);
+		writeLog(LOG_LEVEL_ERROR, "Can't load file: %s\n", fileName);
 		return 1;
 	}
 
 	uint16_t fileSize = getFileSize(file);
-	write_log(LOG_LEVEL_DEBUG, "ROM size: %d\n", fileSize);
+	writeLog(LOG_LEVEL_DEBUG, "ROM size: %d\n", fileSize);
 	if(fileSize > max_size) {
-		write_log(LOG_LEVEL_ERROR, "ROM is too big, loading first %d bytes\n", max_size);
+		writeLog(LOG_LEVEL_ERROR, "ROM is too big, loading first %d bytes\n", max_size);
 		fileSize = max_size;
 	}
 	//if(detect_endiannes != LITTLE_ENDIAN) {
-		write_log(LOG_LEVEL_DEBUG, "Loaded %ld from %s\n",
+		writeLog(LOG_LEVEL_DEBUG, "Loaded %ld from %s\n",
 		fread(memory, 1, fileSize, file),
 		fileName);
 	/*} else {
@@ -52,7 +52,7 @@ uint8_t load_rom(uint8_t *memory, uint16_t max_size, char *fileName){
 	return 0;
 }
 
-uint8_t log_init(){
+uint8_t logInit(){
 	#ifdef LOG_TO_FILE
 		logFile = fopen(LOG_TO_FILE, "w");
 		return !logFile;
@@ -60,13 +60,13 @@ uint8_t log_init(){
 		return 0;
 }
 
-void log_end(){
+void logEnd(){
 	#ifdef LOG_TO_FILE
 		fclose(logFile);
 	#endif
 }
 
-void write_log(uint8_t logLevel, const char* format, ...){
+void writeLog(uint8_t logLevel, const char* format, ...){
 	#ifdef LOG_LEVEL
 			if(logLevel >= LOG_LEVEL) return;
 	#else

@@ -2,6 +2,7 @@
 #define _CHIP8_CPU_H
 
 #include <stdint.h>
+#include <time.h>
 
 struct registers {
 	uint8_t V[16];
@@ -37,10 +38,14 @@ struct CPU {
 	uint16_t programCounter;
 	uint16_t stack[0xF];
 	uint8_t stackPointer;
+	uint8_t delayTimer;
+	uint8_t soundTimer;
+	struct timespec timer;
 };
 
-void cpu_init(struct CPU*);
+void cpuInit(struct CPU*);
 void step(struct CPU *);
+void handleTimers(struct CPU*);
 
 //instructions
 

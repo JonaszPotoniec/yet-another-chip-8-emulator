@@ -6,10 +6,13 @@
 #define RESOLUTION_X 64
 #define RESOLUTION_Y 32
 
+const int8_t keys[] = {'x', '1', '2', '3', 'q', 'w', 'e', 'a', 's', 'd', 'z', 'c', '4', 'r', 'f', 'v'};
+
 int initUI(){
 	initscr();
 	cbreak();
 	noecho();
+	timeout(1);
 	int row, col;
 	getmaxyx(stdscr, row, col);
 	if(row < RESOLUTION_Y || col < RESOLUTION_X){
@@ -22,7 +25,7 @@ int initUI(){
 	}
 	window = newwin(RESOLUTION_Y+2, RESOLUTION_X+2, (row-RESOLUTION_Y+2)/2, (col-RESOLUTION_X+2)/2);
 	if(window == NULL){
-		write_log(LOG_LEVEL_ERROR, "Can't initialize window\n");
+		writeLog(LOG_LEVEL_ERROR, "Can't initialize window\n");
 	}
 	box(window, 0, 0);
   refresh();
@@ -43,6 +46,13 @@ void endUI(){
 	endwin();
 }
 
+void clearScreen(){
+	wclear(window);
+	
+	wrefresh(window);	
+	refresh();
+}
+
 void drawSprite(uint8_t* addr, uint8_t x,  uint8_t y, uint8_t n, uint8_t* flag){
 	*flag = 0;
 
@@ -52,11 +62,10 @@ void drawSprite(uint8_t* addr, uint8_t x,  uint8_t y, uint8_t n, uint8_t* flag){
 				uint8_t draw_x = (x+7-bit) % RESOLUTION_X + 1;
 				uint8_t draw_y = (y+byte) % RESOLUTION_Y + 1;
 				if(mvwinch(window, draw_y, draw_x) == (' '|A_REVERSE)){
-					*flag == 1;
+					*flag = 1;
 					mvwaddch(window, draw_y, draw_x, ' ');
 				}
 				else mvwaddch(window, draw_y, draw_x, ' '|A_REVERSE);
-				printw("%c", mvwinch(window, draw_y, draw_x));
 	}
 
 

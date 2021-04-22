@@ -16,11 +16,11 @@ enum endiannes {
 
 FILE* logFile;
 
-uint8_t log_init();
-void log_end();
-uint8_t detect_endiannes();
+uint8_t logInit();
+void logEnd();
+uint8_t detectEndiannes();
 uint16_t getFileSize(FILE *);
-uint8_t load_rom(uint8_t *, uint16_t, char *);
+uint8_t loadRom(uint8_t *, uint16_t, char *);
 
 enum logType {
 	LOG_LEVEL_ERROR,
@@ -28,6 +28,6 @@ enum logType {
 	LOG_LEVEL_DEBUG
 };
 
-void write_log(uint8_t, const char*, ...);
+void writeLog(uint8_t, const char*, ...);
 
 #endif

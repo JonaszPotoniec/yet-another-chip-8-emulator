@@ -1,20 +1,26 @@
 #include "cpu.h"
 #include "utils.h"
 #include "frontend/ui.h"
+#include "digits.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 
-void cpu_init(struct CPU *cpu){
+void cpuInit(struct CPU *cpu){
 	cpu->stackPointer = 0;
 	cpu->programCounter = 0x200;
 	cpu->stackPointer = 0xF;
 	cpu->registers.I = 0;
+	cpu->delayTimer = 0;
+	cpu->soundTimer = 0;
 	memset(cpu->registers.V, 1, 0xF);
 	memset(cpu->stack, 1, 0xF);
 	memset(cpu->memory.RAM, 1, 0xFFF);
+	memcpy(cpu->memory.RAM, HEX_DIGITS, 0xF*0x5);
+	timespec_get(&cpu->timer, NULL);
 }
 
 void step(struct CPU *cpu){
@@ -23,14 +29,14 @@ void step(struct CPU *cpu){
 	im.byByte.b = *((uint8_t *)&(cpu->memory) + cpu->programCounter + 1);
 	//im.all = ((instruction << 8) & 0xFF00) | ((instruction >> 8) & 0x00Ff);
 
-	write_log(LOG_LEVEL_DEBUG , "instruction: 0x%.4hx (0x%hx %hx %hx %hx) \n", im.all, im.byNibble.a, im.byNibble.b, im.byNibble.c, im.byNibble.d);
+	writeLog(LOG_LEVEL_DEBUG , "instruction: 0x%.4hx (0x%hx %hx %hx %hx) \n", im.all, im.byNibble.a, im.byNibble.b, im.byNibble.c, im.byNibble.d);
 	switch(im.byNibble.a & 0x000F){
 		case 0x0: 
 			switch(im.byByte.b) {
 				case 0x0:
 					SYS(cpu, im.nnn); cpu->programCounter+=2; break;
 				case 0xE0:
-					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "CLS"); break;
+					clearScreen(); cpu->programCounter+=2; break;
 				case 0xEE:
 					RET(cpu); cpu->programCounter+=2; break;	
 			} break;
@@ -53,7 +59,7 @@ void step(struct CPU *cpu){
 				case 0x7: SUBN(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
 				case 0xE: SHL(cpu, im.byNibble.b, im.byNibble.c); cpu->programCounter+=2; break;
 				default: 
-					write_log(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
+					writeLog(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
 					fflush(stdout); 
 					assert(0 && "command not found");
 			} break;
@@ -67,27 +73,28 @@ void step(struct CPU *cpu){
 		case 0xE:
 			switch(im.byByte.b) {
 				case 0x9E:
-					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "SKP"); break;
+					SKP(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				case 0xA1:
-					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "SKNP"); break;
+					SKNP(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				default: 
-					write_log(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
+					writeLog(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
 					fflush(stdout); 
 					assert(0 && "command not found");
-			} cpu->programCounter+=2; break;
+			} break;
 		case 0xF:
 			switch(im.byByte.b){
 				case 0x07:
-					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_DT"); break;
+					LD_DT(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				case 0x0A:
-					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_KEY"); break;
+					LD_KEY(cpu, im.byNibble.b); break;
+					//writeLog(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_KEY"); break;
 				case 0x15:
-					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_SET_DT"); break;
+					LD_SET_DT(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				case 0x18:
-					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_SET_ST"); break;
+					LD_SET_ST(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				case 0x1E: ADD_I(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				case 0x29:
-					write_log(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_FIND_DIGIT"); break;
+					LD_FIND_DIGIT(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				case 0x33:
 					LD_BCD(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				case 0x55:
@@ -95,22 +102,29 @@ void step(struct CPU *cpu){
 				case 0x65:
 					LD_READ_REGISTERS(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				default: 
-					write_log(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
+					writeLog(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
 					fflush(stdout); 
-					//assert(0 && "command not found");
+					assert(0 && "command not found");
 			} break;
 
 
 		default: 
-			write_log(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
+			writeLog(LOG_LEVEL_ERROR, "instruction: 0x%.4hx not found \n", im.all); 
 			fflush(stdout); 
 			assert(0 && "command not found");
 	}
 
-	usleep(50000);
+	usleep(1000);
 	//step(cpu);
 }
 
+void handleTimers(struct CPU *cpu){
+	if(cpu->delayTimer) cpu->delayTimer--;
+	if(cpu->soundTimer) {
+		cpu->soundTimer--;
+		//beep
+	}
+}
 
 //instructions
 
@@ -159,7 +173,6 @@ void XOR(struct CPU *cpu, uint8_t a, uint8_t b){cpu->registers.V[a] ^= cpu->regi
 void SUM(struct CPU *cpu, uint8_t a, uint8_t b){
 	uint16_t result = cpu->registers.V[a];
 	result += cpu->registers.V[b];
-	printf("** %d + %d = %d **", cpu->registers.V[a], cpu->registers.V[b], (uint8_t)(result&0x00ff));
 	cpu->registers.V[a] = result & 0x00FF;
 	cpu->registers.V[0xF] = result > 0xFF00;
 }
@@ -199,30 +212,65 @@ void JP_v0(struct CPU *cpu, uint16_t nnn){
 void RND(struct CPU *cpu, uint8_t a, uint8_t kk){
 	cpu->registers.V[a] = rand() & kk;
 }
-/*
 //Dxyn ========================================= TODO
-void DRW(struct CPU *, uint8_t, uint8_t, uint8_t);
+//void DRW(struct CPU *, uint8_t, uint8_t, uint8_t);
 //Ex9E
-void SKP(struct CPU *, uint8_t);
+void SKP(struct CPU *cpu, uint8_t a){
+	int8_t key;
+	while((key = getch()) != ERR){
+		writeLog(LOG_LEVEL_DEBUG , "key : %d, keyTable: %d \n", key, keys[a]);
+		if(key == keys[cpu->registers.V[a]]){
+			cpu->programCounter += 2;
+			return;
+		}
+	}
+}
 //ExA1
-void SKNP(struct CPU *, uint8_t);
+void SKNP(struct CPU *cpu, uint8_t a){
+	int8_t key;
+	while((key = getch()) != ERR){
+		writeLog(LOG_LEVEL_DEBUG , "key : %d, keyTable: %d  %d \n", key, keys[cpu->registers.V[a]], key == keys[cpu->registers.V[a]]);
+		if(key == keys[cpu->registers.V[a]]){
+			return;
+		}
+	}
+	cpu->programCounter += 2;
+}
 //Fx07
-void LD_DT(struct CPU *, uint8_t);
+void LD_DT(struct CPU *cpu, uint8_t a){
+	cpu->registers.V[a] = cpu->delayTimer;
+}
 //Fx0A
-void LD_KEY(struct CPU *, uint8_t);
+void LD_KEY(struct CPU *cpu, uint8_t a){	
+		int8_t key = getch();
+		if(key != ERR){
+			for(int8_t i = 0; i < 16; i++){
+				if(key == keys[i]){
+					cpu->registers.V[a] = i;
+					cpu->programCounter+=2;
+					return;
+				}
+			}
+		}
+}
 //Fx15
-void LD_SET_DT(struct CPU *, uint8_t);
+void LD_SET_DT(struct CPU *cpu, uint8_t a){
+	cpu->delayTimer = a;
+}
 //Fx18
-void LD_SET_ST(struct CPU *, uint8_t);
+void LD_SET_ST(struct CPU *cpu, uint8_t a){
+	cpu->soundTimer = a;
+}
 //Fx1E
-*/
 void ADD_I(struct CPU *cpu, uint8_t a){
 	cpu->registers.I += cpu->registers.V[a];
 }
-/*
+
 //Fx29
-void LD_FIND_DIGIT(struct CPU *, uint8_t);
-*/
+void LD_FIND_DIGIT(struct CPU *cpu, uint8_t a){
+	cpu->registers.I = a*0x5;
+}
+
 //Fx33
 void LD_BCD(struct CPU *cpu, uint8_t a){
 	uint8_t temp = cpu->registers.V[a];

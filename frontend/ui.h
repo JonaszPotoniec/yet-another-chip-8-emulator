@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 WINDOW *window;
+extern const int8_t keys[16];
 
 int initUI();
 void printHelloWorld();
