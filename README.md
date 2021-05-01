@@ -1,5 +1,5 @@
 # Yet another chip 8 emulator
-### This is my take on chip 8 interpreter 
+### This is my take on a chip 8 interpreter 
 
 It mostly works. Input is a little bit buggy but works.  
 Right now I'm mainly focusing on porting it to GD32 based microcontroller so fixing input on PC isn't my top priority.
