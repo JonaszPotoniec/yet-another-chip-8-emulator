@@ -35,7 +35,7 @@ void step(struct CPU *cpu){
 			switch(im.byByte.b) {
 				case 0x0:
 					SYS(cpu, im.nnn); cpu->programCounter+=2; break;
-				case 0xE0:
+				case 0xE0: //TODO UNREACHABLE
 					clearScreen(); cpu->programCounter+=2; break;
 				case 0xEE:
 					RET(cpu); cpu->programCounter+=2; break;	
@@ -174,7 +174,7 @@ void SUM(struct CPU *cpu, uint8_t a, uint8_t b){
 	uint16_t result = cpu->registers.V[a];
 	result += cpu->registers.V[b];
 	cpu->registers.V[a] = result & 0x00FF;
-	cpu->registers.V[0xF] = result > 0xFF00;
+	cpu->registers.V[0xF] = result > 0xFF00; //TODO bug?
 }
 //8xy5
 void SUB(struct CPU *cpu, uint8_t a, uint8_t b){
@@ -189,11 +189,11 @@ void SHR(struct CPU *cpu, uint8_t a, uint8_t b){
 //8xy7
 void SUBN(struct CPU *cpu, uint8_t a, uint8_t b){
 	cpu->registers.V[0xF] = cpu->registers.V[a] < cpu->registers.V[b];
-	cpu->registers.V[a] = cpu->registers.V[b] - cpu->registers.V[b];
+	cpu->registers.V[a] = cpu->registers.V[b] - cpu->registers.V[b]; //TODO bug?
 }
 //8xyE
 void SHL(struct CPU *cpu, uint8_t a, uint8_t b){
-	cpu->registers.V[0xF] = cpu->registers.V[a] & 0b10000000;
+	cpu->registers.V[0xF] = cpu->registers.V[a] & 0b10000000; //TODO bug
 	cpu->registers.V[a] *= 2;
 }
 //9xy0
@@ -268,7 +268,7 @@ void ADD_I(struct CPU *cpu, uint8_t a){
 
 //Fx29
 void LD_FIND_DIGIT(struct CPU *cpu, uint8_t a){
-	cpu->registers.I = a*0x5;
+	cpu->registers.I = cpu->registers.V[a]*0x5;
 }
 
 //Fx33
