@@ -27,18 +27,17 @@ void step(struct CPU *cpu){
 	union instructionMask im;
 	im.byByte.a = *((uint8_t *)&(cpu->memory) + cpu->programCounter);
 	im.byByte.b = *((uint8_t *)&(cpu->memory) + cpu->programCounter + 1);
-	//im.all = ((instruction << 8) & 0xFF00) | ((instruction >> 8) & 0x00Ff);
 
 	writeLog(LOG_LEVEL_DEBUG , "instruction: 0x%.4hx (0x%hx %hx %hx %hx) \n", im.all, im.byNibble.a, im.byNibble.b, im.byNibble.c, im.byNibble.d);
 	switch(im.byNibble.a & 0x000F){
 		case 0x0: 
 			switch(im.byByte.b) {
-				case 0x0:
-					SYS(cpu, im.nnn); cpu->programCounter+=2; break;
-				case 0xE0: //TODO UNREACHABLE
+				case 0xE0:
 					clearScreen(); cpu->programCounter+=2; break;
 				case 0xEE:
 					RET(cpu); cpu->programCounter+=2; break;	
+				default:
+					SYS(cpu, im.nnn); cpu->programCounter+=2; break;
 			} break;
 		case 0x1: JP(cpu, im.nnn); break;
 		case 0x2: CALL(cpu, im.nnn); cpu->programCounter+=0; break;
