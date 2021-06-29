@@ -174,7 +174,7 @@ void SUM(struct CPU *cpu, uint8_t a, uint8_t b){
 	uint16_t result = cpu->registers.V[a];
 	result += cpu->registers.V[b];
 	cpu->registers.V[a] = result & 0x00FF;
-	cpu->registers.V[0xF] = result > 0xFF00; //TODO bug?
+	cpu->registers.V[0xF] = result > 0xFF;
 }
 //8xy5
 void SUB(struct CPU *cpu, uint8_t a, uint8_t b){
