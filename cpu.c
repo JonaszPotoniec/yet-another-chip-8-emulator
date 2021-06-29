@@ -193,8 +193,8 @@ void SUBN(struct CPU *cpu, uint8_t a, uint8_t b){
 }
 //8xyE
 void SHL(struct CPU *cpu, uint8_t a, uint8_t b){
-	cpu->registers.V[0xF] = cpu->registers.V[a] & 0b10000000; //TODO bug
-	cpu->registers.V[a] *= 2;
+	cpu->registers.V[0xF] = !!(cpu->registers.V[a] & 0b10000000);
+	cpu->registers.V[a] <<= 2;
 }
 //9xy0
 void SNE(struct CPU *cpu, uint8_t a, uint8_t b){
