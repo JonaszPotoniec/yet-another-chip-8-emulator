@@ -189,7 +189,7 @@ void SHR(struct CPU *cpu, uint8_t a, uint8_t b){
 //8xy7
 void SUBN(struct CPU *cpu, uint8_t a, uint8_t b){
 	cpu->registers.V[0xF] = cpu->registers.V[a] < cpu->registers.V[b];
-	cpu->registers.V[a] = cpu->registers.V[b] - cpu->registers.V[b]; //TODO bug?
+	cpu->registers.V[a] = cpu->registers.V[b] - cpu->registers.V[a];
 }
 //8xyE
 void SHL(struct CPU *cpu, uint8_t a, uint8_t b){
