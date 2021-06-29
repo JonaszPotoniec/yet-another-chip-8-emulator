@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <arpa/inet.h>
 
+FILE* logFile;
+
 uint8_t detectEndiannes(){
 	union tester {
 		uint8_t nibble : 4;

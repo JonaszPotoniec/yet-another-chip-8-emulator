@@ -43,7 +43,8 @@ struct CPU {
 	struct timespec timer;
 };
 
-void cpuInit(struct CPU*);
+int cpuInit(struct CPU*);
+void cpuEnd();
 void step(struct CPU *);
 void handleTimers(struct CPU*);
 

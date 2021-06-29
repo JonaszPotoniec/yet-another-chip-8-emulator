@@ -14,7 +14,7 @@ enum endiannes {
 	LITTLE_ENDIAN
 };
 
-FILE* logFile;
+extern FILE* logFile;
 
 uint8_t logInit();
 void logEnd();

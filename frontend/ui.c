@@ -7,6 +7,7 @@
 #define RESOLUTION_Y 32
 
 const int8_t keys[] = {'x', '1', '2', '3', 'q', 'w', 'e', 'a', 's', 'd', 'z', 'c', '4', 'r', 'f', 'v'};
+WINDOW *window;
 
 int initUI(){
 	initscr();

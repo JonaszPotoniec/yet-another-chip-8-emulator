@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "frontend/ui.h"
 #include "digits.h"
+#include "timers.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +10,9 @@
 #include <string.h>
 #include <time.h>
 
-void cpuInit(struct CPU *cpu){
+#define stepDelay 2000000L
+
+int cpuInit(struct CPU *cpu){
 	cpu->stackPointer = 0;
 	cpu->programCounter = 0x200;
 	cpu->stackPointer = 0xF;
@@ -21,6 +24,7 @@ void cpuInit(struct CPU *cpu){
 	memset(cpu->memory.RAM, 1, 0xFFF);
 	memcpy(cpu->memory.RAM, HEX_DIGITS, 0xF*0x5);
 	timespec_get(&cpu->timer, NULL);
+	return startTimers();
 }
 
 void step(struct CPU *cpu){
@@ -86,7 +90,6 @@ void step(struct CPU *cpu){
 					LD_DT(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				case 0x0A:
 					LD_KEY(cpu, im.byNibble.b); break;
-					//writeLog(LOG_LEVEL_ERROR, "instruction %s is not implemented yet \n", "LD_KEY"); break;
 				case 0x15:
 					LD_SET_DT(cpu, im.byNibble.b); cpu->programCounter+=2; break;
 				case 0x18:
@@ -113,16 +116,11 @@ void step(struct CPU *cpu){
 			assert(0 && "command not found");
 	}
 
-	usleep(1000);
-	//step(cpu);
+	nanosleep((const struct timespec[]){{0, stepDelay}}, NULL);
 }
 
-void handleTimers(struct CPU *cpu){
-	if(cpu->delayTimer) cpu->delayTimer--;
-	if(cpu->soundTimer) {
-		cpu->soundTimer--;
-		//beep
-	}
+void cpuEnd(){
+	stopTimers();
 }
 
 //instructions
@@ -211,8 +209,6 @@ void JP_v0(struct CPU *cpu, uint16_t nnn){
 void RND(struct CPU *cpu, uint8_t a, uint8_t kk){
 	cpu->registers.V[a] = rand() & kk;
 }
-//Dxyn ========================================= TODO
-//void DRW(struct CPU *, uint8_t, uint8_t, uint8_t);
 //Ex9E
 void SKP(struct CPU *cpu, uint8_t a){
 	int8_t key;
@@ -237,7 +233,7 @@ void SKNP(struct CPU *cpu, uint8_t a){
 }
 //Fx07
 void LD_DT(struct CPU *cpu, uint8_t a){
-	cpu->registers.V[a] = cpu->delayTimer;
+	cpu->registers.V[a] = readDelayTimer();
 }
 //Fx0A
 void LD_KEY(struct CPU *cpu, uint8_t a){	
@@ -254,11 +250,11 @@ void LD_KEY(struct CPU *cpu, uint8_t a){
 }
 //Fx15
 void LD_SET_DT(struct CPU *cpu, uint8_t a){
-	cpu->delayTimer = a;
+	setDelayTimer(a);
 }
 //Fx18
 void LD_SET_ST(struct CPU *cpu, uint8_t a){
-	cpu->soundTimer = a;
+	setSoundTimer(a);
 }
 //Fx1E
 void ADD_I(struct CPU *cpu, uint8_t a){

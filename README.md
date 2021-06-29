@@ -9,7 +9,7 @@ Right now I'm mainly focusing on porting it to GD32 based microcontroller so fix
 |                 | Status      |
 |-----------------|-------------|
 | Chip-8 instructions | Fully supported |
-| Timers | TODO |
+| Timers | Working |
 | Super Chip-48 instructions | TODO |
 | Display | Working (ncurses) |
 | Keyboard | Partial support, needs improvement |

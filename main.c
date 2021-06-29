@@ -10,6 +10,7 @@
 void safeExit(){
 	endUI();
 	logEnd();
+	cpuEnd();
 	exit(SIGINT);
 }
 
@@ -23,9 +24,8 @@ int main(int argc, char *argv[]) {
 	signal(SIGINT, safeExit);
 	writeLog(LOG_LEVEL_INFO, "endiannes: %d\n", detectEndiannes());
 	struct CPU cpu;
-	cpuInit(&cpu);
+	if(cpuInit(&cpu)) return 1;
 	loadRom(cpu.memory.PROGRAM, 0xFFF - 0x200, argv[1]);
-	//loadRom(cpu.memory.PROGRAM, 0xFFF - 0x200, "./test_opcode.ch8");
 
 	if(initUI()) return 1;
 	logInit();
